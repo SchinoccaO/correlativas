@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Planes de Estudio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --pink-lightest: #fce8ef;
+    --pink-light: #f5c6d8;
+    --pink-mid: #e8899a;
+    --pink-strong: #d4637a;
+    --pink-accent: #c44d68;
+    --teal-lightest: #e6f6f4;
+    --teal-light: #a8ddd8;
+    --teal-mid: #5bbdb6;
+    --teal-strong: #3a9e97;
+    --teal-accent: #2a8880;
+    --gray-50: #fafafa;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --text: #1e1e2e;
+    --text-soft: #6b5e6e;
+    --shadow-sm: 0 1px 4px rgba(0,0,0,0.07);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.1);
+    --radius: 16px;
+    --card-width: 230px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #fff; color: var(--text); min-height: 100vh; }
+  #app { position: relative; }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    padding: 36px 24px 22px;
+    border-bottom: 1px solid var(--gray-200);
+    background: #fff;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .header-badge {
+    display: inline-block;
+    background: var(--pink-lightest); border: 1px solid var(--pink-light); color: var(--pink-accent);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 4px 14px; border-radius: 20px; margin-bottom: 10px;
+  }
+  .header h1 { font-family: 'Playfair Display', serif; font-size: clamp(20px, 3.5vw, 32px); font-weight: 700; line-height: 1.2; margin-bottom: 5px; }
+  .header h1 span.pink { color: var(--pink-accent); }
+  .header-sub { color: var(--text-soft); font-size: 13px; margin-bottom: 16px; }
+  .legend { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-soft); font-weight: 500; }
+  .legend-dot { width: 13px; height: 13px; border-radius: 4px; border: 1.5px solid transparent; }
+  .legend-dot.pending  { background: #f3f4f6; border-color: var(--gray-300); }
+  .legend-dot.regular  { background: var(--pink-lightest); border-color: var(--pink-light); }
+  .legend-dot.approved { background: var(--pink-mid); border-color: var(--pink-strong); }
+  .legend-dot.enabled  { background: white; border-color: var(--pink-mid); box-shadow: 0 0 6px rgba(232,137,154,0.6); }
+  .reset-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fff; border: 1.5px solid var(--gray-200); color: var(--text-soft);
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; margin-left: 4px;
+  }
+  .reset-btn:hover { background: var(--pink-lightest); border-color: var(--pink-mid); color: var(--pink-accent); }
+
+  /* Progress */
+  .progress-section { margin: 12px auto 0; padding: 0 16px; max-width: 580px; }
+  .progress-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-soft); margin-bottom: 5px; }
+  .progress-bar-wrap { background: var(--gray-100); border-radius: 20px; height: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 20px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+  .progress-bar-fill.pink-fill { background: linear-gradient(90deg, var(--pink-light), var(--pink-mid)); }
+  .progress-bar-fill.teal-fill { background: linear-gradient(90deg, var(--teal-light), var(--teal-mid)); }
+
+  /* Title banners */
+  .title-banners { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; padding: 14px 20px 4px; max-width: 1080px; margin: 0 auto; }
+  .title-banner {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 18px; border-radius: 12px; border: 1.5px solid;
+    font-size: 12.5px; font-weight: 600; transition: all 0.3s ease;
+    flex: 1; min-width: 220px; max-width: 340px;
+  }
+  .title-banner.locked { background: var(--gray-50); border-color: var(--gray-200); color: var(--gray-400); }
+  .title-banner.unlocked-pink {
+    background: linear-gradient(135deg, #fff0f4, #fde8ef); border-color: var(--pink-mid); color: var(--pink-accent);
+    box-shadow: 0 3px 14px rgba(212,99,122,0.18);
+    animation: titlePop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .title-banner.unlocked-teal {
+    background: linear-gradient(135deg, #edfaf9, #d5f0ed); border-color: var(--teal-mid); color: var(--teal-accent);
+    box-shadow: 0 3px 14px rgba(91,189,182,0.18);
+    animation: titlePop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes titlePop { 0%{ transform:scale(0.96) } 100%{ transform:scale(1) } }
+  .title-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Plan section */
+  .plan-section { padding: 22px 0 0; }
+  .plan-header { display: flex; align-items: center; gap: 12px; padding: 0 20px 16px; }
+  .plan-title-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px; border-radius: 30px;
+    font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; border: 1.5px solid;
+    white-space: nowrap;
+  }
+  .plan-title-pill.pink { background: var(--pink-lightest); border-color: var(--pink-light); color: var(--pink-accent); }
+  .plan-title-pill.teal { background: var(--teal-lightest); border-color: var(--teal-light); color: var(--teal-accent); }
+  .plan-line { flex: 1; height: 1px; background: var(--gray-200); }
+
+  /* Board */
+  .board { padding: 4px 20px 32px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .board-inner { display: flex; gap: 14px; min-width: max-content; padding: 4px 2px; align-items: flex-start; }
+
+  /* Column */
+  .column { width: var(--card-width); flex-shrink: 0; }
+  .column-header { text-align: center; margin-bottom: 12px; padding: 10px 12px; border-radius: var(--radius); border: 1px solid; }
+  .column-header.pink-col { background: linear-gradient(135deg, var(--pink-lightest), #fff6f9); border-color: var(--pink-light); }
+  .column-header.teal-col { background: linear-gradient(135deg, var(--teal-lightest), #f0faf9); border-color: var(--teal-light); }
+  .nivel-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; }
+  .nivel-label.pink { color: var(--pink-mid); }
+  .nivel-label.teal { color: var(--teal-mid); }
+  .nivel-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--text); }
+  .nivel-hours { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
+
+  /* Card */
+  .card {
+    position: relative; margin-bottom: 10px;
+    border-radius: var(--radius); border: 1.5px solid var(--gray-200);
+    background: #fff; padding: 13px 14px 11px;
+    cursor: pointer; transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    user-select: none; box-shadow: var(--shadow-sm); min-height: 78px;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .card:active { transform: scale(0.97); }
+
+  /* Pink states */
+  .card.locked-card { opacity: 0.52; cursor: not-allowed; }
+  .card.locked-card:hover { transform: none; box-shadow: var(--shadow-sm); }
+  .card.enabled-pink:not(.regular):not(.approved) {
+    border-color: var(--pink-light);
+    box-shadow: 0 0 0 2.5px rgba(232,137,154,0.22), var(--shadow-sm);
+    animation: pulse-pink 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-pink {
+    0%,100% { box-shadow: 0 0 0 2.5px rgba(232,137,154,0.22), var(--shadow-sm); }
+    50%      { box-shadow: 0 0 0 4px rgba(232,137,154,0.14), 0 4px 16px rgba(232,137,154,0.18); }
+  }
+  .card.regular.pink-card  { background: linear-gradient(135deg,#fff5f8,#feeaf0); border-color: var(--pink-light); }
+  .card.approved.pink-card { background: linear-gradient(135deg,var(--pink-lightest),#fad4e0); border-color: var(--pink-mid); box-shadow: 0 2px 10px rgba(232,137,154,0.22); }
+
+  /* Teal states */
+  .card.enabled-teal:not(.regular):not(.approved) {
+    border-color: var(--teal-light);
+    box-shadow: 0 0 0 2.5px rgba(91,189,182,0.22), var(--shadow-sm);
+    animation: pulse-teal 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-teal {
+    0%,100% { box-shadow: 0 0 0 2.5px rgba(91,189,182,0.22), var(--shadow-sm); }
+    50%      { box-shadow: 0 0 0 4px rgba(91,189,182,0.14), 0 4px 16px rgba(91,189,182,0.18); }
+  }
+  .card.regular.teal-card  { background: linear-gradient(135deg,#edfaf9,#d5f0ed); border-color: var(--teal-light); }
+  .card.approved.teal-card { background: linear-gradient(135deg,var(--teal-lightest),#b8e8e5); border-color: var(--teal-mid); box-shadow: 0 2px 10px rgba(91,189,182,0.22); }
+
+  /* Card internals */
+  .card-number { position: absolute; top: 8px; right: 10px; font-size: 10px; font-weight: 700; color: var(--gray-300); }
+  .card.regular.pink-card .card-number, .card.approved.pink-card .card-number { color: var(--pink-light); }
+  .card.regular.teal-card .card-number, .card.approved.teal-card .card-number { color: var(--teal-light); }
+
+  .card-name { font-size: 13.5px; font-weight: 500; color: var(--text); line-height: 1.35; padding-right: 24px; margin-bottom: 8px; }
+  .card.locked-card .card-name { color: var(--gray-400); }
+  .card.approved .card-name { font-weight: 600; }
+
+  .card-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .card-hours { font-size: 11.5px; color: var(--text-soft); background: rgba(0,0,0,0.04); padding: 2px 7px; border-radius: 5px; font-weight: 500; }
+  .card.regular.pink-card  .card-hours { background: rgba(232,137,154,0.14); color: var(--pink-strong); }
+  .card.approved.pink-card .card-hours { background: rgba(212,99,122,0.13);  color: var(--pink-accent); }
+  .card.regular.teal-card  .card-hours { background: rgba(91,189,182,0.14);  color: var(--teal-strong); }
+  .card.approved.teal-card .card-hours { background: rgba(58,158,151,0.13);  color: var(--teal-accent); }
+
+  .card-state-badge { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; }
+  .pink-badge-enabled  { background: rgba(232,137,154,0.1); color: var(--pink-mid); }
+  .pink-badge-regular  { background: rgba(212,99,122,0.12); color: var(--pink-strong); }
+  .pink-badge-approved { background: rgba(196,77,104,0.14); color: var(--pink-accent); }
+  .teal-badge-enabled  { background: rgba(91,189,182,0.1);  color: var(--teal-mid); }
+  .teal-badge-regular  { background: rgba(58,158,151,0.12); color: var(--teal-strong); }
+  .teal-badge-approved { background: rgba(42,136,128,0.14); color: var(--teal-accent); }
+
+  .check-icon { position: absolute; top: 8px; left: 10px; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: white; font-weight: 800; }
+  .check-icon.pink { background: var(--pink-mid); }
+  .check-icon.teal { background: var(--teal-mid); }
+
+  /* Seminario */
+  .seminario-wrap { padding: 0 20px 16px; max-width: 760px; margin: 0 auto; }
+  .seminario-banner { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-radius: var(--radius); border: 1.5px solid; font-size: 13px; transition: all 0.25s; cursor: pointer; }
+  .seminario-banner.locked   { background: var(--gray-50); border-color: var(--gray-200); color: var(--gray-400); }
+  .seminario-banner.enabled  { background: var(--pink-lightest); border-color: var(--pink-light); color: var(--text); box-shadow: 0 0 0 3px rgba(232,137,154,0.14); }
+  .seminario-banner.approved { background: linear-gradient(135deg,var(--pink-lightest),#fad4e0); border-color: var(--pink-mid); color: var(--text); box-shadow: 0 3px 14px rgba(212,99,122,0.18); }
+  .seminario-banner:not(.locked):hover { transform: translateY(-2px); }
+
+  /* Electivas */
+  .electivas-section { max-width: 1280px; margin: 0 auto; padding: 8px 20px 40px; }
+  .electivas-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+  .electivas-subtitle { text-align: center; font-size: 12.5px; color: var(--text-soft); margin-bottom: 16px; }
+  .credits-bar { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  .credit-badge { padding: 10px 20px; border-radius: 12px; border: 1.5px solid var(--pink-light); background: var(--pink-lightest); text-align: center; min-width: 160px; }
+  .credit-badge .credit-count { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--pink-accent); }
+  .credit-badge .credit-label { font-size: 11px; color: var(--text-soft); font-weight: 500; }
+  .credit-badge .credit-target { font-size: 10.5px; color: var(--pink-mid); font-weight: 600; margin-top: 2px; }
+  .electivas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 10px; }
+  .electiva-card { background: #fff; border: 1.5px solid var(--gray-200); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: var(--shadow-sm); min-height: 84px; }
+  .electiva-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .electiva-card:active { transform: scale(0.97); }
+  .electiva-card.locked-e  { opacity: 0.5; cursor: not-allowed; }
+  .electiva-card.locked-e:hover { transform: none; box-shadow: var(--shadow-sm); }
+  .electiva-card.enabled-e { border-color: var(--pink-light); box-shadow: 0 0 0 2px rgba(232,137,154,0.18); }
+  .electiva-card.approved-e{ background: linear-gradient(135deg,var(--pink-lightest),#fad4e0); border-color: var(--pink-mid); }
+  .electiva-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.35; margin-bottom: 8px; padding-right: 18px; }
+  .electiva-card.approved-e .electiva-name { font-weight: 600; }
+  .electiva-meta { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag { font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .tag.nivel   { background: var(--pink-lightest); color: var(--pink-accent); }
+  .tag.modality{ background: var(--gray-100); color: var(--gray-500); }
+  .tag.credits { background: rgba(212,99,122,0.1); color: var(--pink-strong); }
+  .electiva-check { position: absolute; top: 8px; right: 9px; width: 16px; height: 16px; background: var(--pink-mid); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: white; font-weight: 800; }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; }
+  .tooltip { display: none; position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%); background: rgba(20,15,25,0.92); color: #f9e8ef; font-size: 11.5px; padding: 8px 12px; border-radius: 9px; z-index: 300; pointer-events: none; max-width: 240px; white-space: normal; text-align: center; box-shadow: 0 4px 18px rgba(0,0,0,0.18); line-height: 1.45; }
+  .tooltip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:rgba(20,15,25,0.92); }
+  .card:hover .tooltip, .electiva-card:hover .tooltip { display: block; }
+
+  /* Divider */
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--gray-200), transparent); margin: 6px 20px 20px; }
+
+  /* TEC section */
+  .tec-section { padding: 0 0 40px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    :root { --card-width: 200px; }
+    .card-name { font-size: 12.5px; }
+  }
+  @media (max-width: 600px) {
+    :root { --card-width: 170px; }
+    .header { padding: 22px 12px 16px; }
+    .board { padding: 4px 10px 24px; }
+    .card-name { font-size: 12px; }
+    .title-banner { min-width: 100%; max-width: 100%; }
+    .plan-header { padding: 0 12px 12px; flex-wrap: wrap; }
+    .plan-title-pill { font-size: 13px; padding: 7px 14px; }
+    .seminario-wrap { padding: 0 12px 14px; }
+    .electivas-section { padding: 8px 12px 32px; }
+    .electivas-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
+    .legend-item { font-size: 11.5px; }
+    .nivel-title { font-size: 16px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { height: 5px; width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--gray-100); }
+  ::-webkit-scrollbar-thumb { background: var(--pink-light); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--pink-mid); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">UTN · FRC</div>
+    <h1>Mis <span class="pink">Planes de Estudio</span></h1>
+    <div class="header-sub">Hacé click en cada materia para cambiar su estado · El progreso se guarda automáticamente</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot pending"></div> Bloqueada</div>
+      <div class="legend-item"><div class="legend-dot enabled"></div> Habilitada</div>
+      <div class="legend-item"><div class="legend-dot regular"></div> Regular</div>
+      <div class="legend-item"><div class="legend-dot approved"></div> Aprobada</div>
+      <button class="reset-btn" @click="resetAll">↺ Reiniciar todo</button>
+    </div>
+  </div>
+
+  <!-- TITLE BANNERS -->
+  <div class="title-banners">
+    <div class="title-banner" :class="analystUnlocked ? 'unlocked-pink' : 'locked'">
+      <span class="title-icon">{{ analystUnlocked ? '🎓' : '🔒' }}</span>
+      <div>
+        <div style="font-size:10.5px;font-weight:400;margin-bottom:1px;opacity:0.8">Título intermedio · ISI</div>
+        <div>Analista Desarrollador/a Universitario/a</div>
+        <div style="font-size:10px;font-weight:400;opacity:0.7;margin-top:2px">Mat. 1–23 + Seminario + 4 créd. electivas niv.3</div>
+      </div>
+    </div>
+    <div class="title-banner" :class="engineerUnlocked ? 'unlocked-pink' : 'locked'">
+      <span class="title-icon">{{ engineerUnlocked ? '🏆' : '🔒' }}</span>
+      <div>
+        <div style="font-size:10.5px;font-weight:400;margin-bottom:1px;opacity:0.8">Título final · ISI</div>
+        <div>Ingeniero/a en Sistemas de Información</div>
+        <div style="font-size:10px;font-weight:400;opacity:0.7;margin-top:2px">Todo aprobado + PPS + Proyecto Final + 20 créd.</div>
+      </div>
+    </div>
+    <div class="title-banner" :class="tecUnlocked ? 'unlocked-teal' : 'locked'">
+      <span class="title-icon">{{ tecUnlocked ? '📘' : '🔒' }}</span>
+      <div>
+        <div style="font-size:10.5px;font-weight:400;margin-bottom:1px;opacity:0.8">Título · TUP</div>
+        <div>Técnico/a Universitario/a en Programación</div>
+        <div style="font-size:10px;font-weight:400;opacity:0.7;margin-top:2px">Todas las materias del plan aprobadas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══ ISI PLAN ══ -->
+  <div class="plan-section">
+    <div class="plan-header">
+      <div class="plan-title-pill pink">🌸 Ingeniería en Sistemas de Información — Plan 2023</div>
+      <div class="plan-line"></div>
+      <div style="font-size:12px;color:var(--text-soft);white-space:nowrap">{{ approvedISI }}/{{ totalISI }} aprobadas</div>
+    </div>
+
+    <div class="progress-section" style="margin-bottom:14px">
+      <div class="progress-row">
+        <span>Progreso ISI</span>
+        <span style="font-weight:600;color:var(--pink-accent)">{{ Math.round(approvedISI/totalISI*100) }}%</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill pink-fill" :style="{width:(approvedISI/totalISI*100)+'%'}"></div></div>
+    </div>
+
+    <!-- Seminario -->
+    <div class="seminario-wrap">
+      <div class="seminario-banner" :class="seminarioState" @click="toggleSeminario">
+        <span style="font-size:20px">{{ seminarioApproved ? '📜' : '📋' }}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13.5px">99 · Seminario Integrados (Analista)</div>
+          <div style="font-size:11.5px;opacity:0.8;margin-top:2px">Regular: mat. 16 · Aprobadas: 6-8-13-14 · Solo 2° cuatrimestre · 4hs</div>
+        </div>
+        <div style="font-size:12px;font-weight:700;white-space:nowrap">
+          {{ seminarioState==='locked' ? '🔒 Bloqueada' : seminarioApproved ? '✓ Aprobada' : '→ Habilitada' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Board ISI -->
+    <div class="board">
+      <div class="board-inner">
+        <div class="column" v-for="nivel in nivelesISI" :key="nivel.num">
+          <div class="column-header pink-col">
+            <div class="nivel-label pink">Nivel</div>
+            <div class="nivel-title">{{ nivel.num }}</div>
+            <div class="nivel-hours">{{ nivel.totalHours }}hs</div>
+          </div>
+          <div class="tooltip-wrap card"
+            v-for="m in nivel.materias" :key="'isi-'+m.id"
+            :class="isiCardClasses(m)"
+            @click="cycleISI(m.id)"
+          >
+            <div v-if="isiStates[m.id]==='approved'" class="check-icon pink">✓</div>
+            <div class="card-number">#{{ m.id }}</div>
+            <div class="card-name">{{ m.name }}</div>
+            <div class="card-meta">
+              <span class="card-hours">{{ m.hours }}hs</span>
+              <span v-if="isiStateBadge(m)" class="card-state-badge" :class="isiStateBadge(m).cls">{{ isiStateBadge(m).label }}</span>
+            </div>
+            <div class="tooltip">{{ isiTooltip(m) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Electivas ISI -->
+    <div class="electivas-section">
+      <div class="electivas-title">Materias Electivas — ISI</div>
+      <div class="electivas-subtitle">Aprobá electivas para acumular créditos · Click para marcar / desmarcar</div>
+      <div class="credits-bar">
+        <div class="credit-badge">
+          <div class="credit-count">{{ creditsNiv3 }}</div>
+          <div class="credit-label">Créditos Nivel 3</div>
+          <div class="credit-target">Mín. 4 → Analista</div>
+        </div>
+        <div class="credit-badge">
+          <div class="credit-count">{{ totalCredits }}</div>
+          <div class="credit-label">Créditos Totales</div>
+          <div class="credit-target">Mín. 20 → Ingeniería</div>
+        </div>
+      </div>
+      <div class="electivas-grid">
+        <div v-for="e in electivasISI" :key="e.id"
+          class="tooltip-wrap"
+          :class="electivaClasses(e)"
+          @click="toggleElectiva(e.id)"
+        >
+          <div v-if="electivaStates[e.id]" class="electiva-check">✓</div>
+          <div class="electiva-name">{{ e.name }}</div>
+          <div class="electiva-meta">
+            <span class="tag nivel">Niv. {{ e.nivel }}</span>
+            <span class="tag modality">{{ e.modality }}</span>
+            <span class="tag credits">{{ e.credits }} créd.</span>
+          </div>
+          <div class="tooltip">{{ electivaTooltip(e) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══ TECNICATURA PLAN ══ -->
+  <div class="tec-section">
+    <div class="plan-header">
+      <div class="plan-title-pill teal">💻 Tecnicatura Universitaria en Programación</div>
+      <div class="plan-line"></div>
+      <div style="font-size:12px;color:var(--text-soft);white-space:nowrap">{{ approvedTEC }}/{{ totalTEC }} aprobadas</div>
+    </div>
+
+    <div class="progress-section" style="margin-bottom:18px">
+      <div class="progress-row">
+        <span>Progreso TUP</span>
+        <span style="font-weight:600;color:var(--teal-accent)">{{ Math.round(approvedTEC/totalTEC*100) }}%</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill teal-fill" :style="{width:(approvedTEC/totalTEC*100)+'%'}"></div></div>
+    </div>
+
+    <div class="board">
+      <div class="board-inner">
+        <div class="column" v-for="anio in nivelesTEC" :key="'tec-a'+anio.num">
+          <div class="column-header teal-col">
+            <div class="nivel-label teal">{{ anio.num===0 ? 'Previo' : 'Año' }}</div>
+            <div class="nivel-title">{{ anio.num===0 ? '0' : anio.num }}</div>
+            <div class="nivel-hours">{{ anio.materias.length }} materias</div>
+          </div>
+          <div class="tooltip-wrap card"
+            v-for="m in anio.materias" :key="'tec-'+m.id"
+            :class="tecCardClasses(m)"
+            @click="cycleTEC(m.id)"
+          >
+            <div v-if="tecStates[m.id]==='approved'" class="check-icon teal">✓</div>
+            <div class="card-name" style="padding-right:8px">{{ m.name }}</div>
+            <div class="card-meta">
+              <span v-if="tecStateBadge(m)" class="card-state-badge" :class="tecStateBadge(m).cls">{{ tecStateBadge(m).label }}</span>
+            </div>
+            <div class="tooltip">{{ tecTooltip(m) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const { createApp, reactive, computed, watch } = Vue;
+
+const ISI_DATA = [
+  {id:1, name:'Análisis Matemático I',nivel:1,hours:5,reqReg:[],reqApr:[]},
+  {id:2, name:'Álgebra y Geometría Analítica',nivel:1,hours:5,reqReg:[],reqApr:[]},
+  {id:3, name:'Física I',nivel:1,hours:5,reqReg:[],reqApr:[]},
+  {id:4, name:'Inglés I',nivel:1,hours:2,reqReg:[],reqApr:[]},
+  {id:5, name:'Lógica y Estructuras Discretas',nivel:1,hours:3,reqReg:[],reqApr:[]},
+  {id:6, name:'Algoritmos y Estructura de Datos',nivel:1,hours:5,reqReg:[],reqApr:[]},
+  {id:7, name:'Arquitectura de Computadoras',nivel:1,hours:4,reqReg:[],reqApr:[]},
+  {id:8, name:'Sistemas y Proceso de Negocios',nivel:1,hours:3,reqReg:[],reqApr:[]},
+  {id:11,name:'Ingeniería y Sociedad',nivel:1,hours:2,reqReg:[],reqApr:[]},
+  {id:9, name:'Análisis Matemático II',nivel:2,hours:5,reqReg:[1,2],reqApr:[]},
+  {id:10,name:'Física II',nivel:2,hours:5,reqReg:[1,3],reqApr:[]},
+  {id:12,name:'Inglés II',nivel:2,hours:2,reqReg:[4],reqApr:[]},
+  {id:13,name:'Sintaxis y Semántica',nivel:2,hours:4,reqReg:[5,6],reqApr:[]},
+  {id:14,name:'Paradigmas de Programación',nivel:2,hours:4,reqReg:[5,6],reqApr:[]},
+  {id:15,name:'Sistemas Operativos',nivel:2,hours:4,reqReg:[7],reqApr:[]},
+  {id:16,name:'Análisis de Sistemas de Información',nivel:2,hours:6,reqReg:[6,8],reqApr:[]},
+  {id:17,name:'Probabilidad y Estadística',nivel:2,hours:3,reqReg:[1,2],reqApr:[]},
+  {id:18,name:'Economía',nivel:3,hours:3,reqReg:[],reqApr:[1,2]},
+  {id:19,name:'Base de Datos',nivel:3,hours:4,reqReg:[13,16],reqApr:[5,6]},
+  {id:20,name:'Desarrollo de Software',nivel:3,hours:4,reqReg:[14,16],reqApr:[5,6]},
+  {id:21,name:'Comunicación de Datos',nivel:3,hours:4,reqReg:[],reqApr:[3,7]},
+  {id:22,name:'Análisis Numérico',nivel:3,hours:3,reqReg:[9],reqApr:[1,2]},
+  {id:23,name:'Diseño de Sistemas de Información',nivel:3,hours:6,reqReg:[14,16],reqApr:[4,6,8]},
+  {id:24,name:'Legislación',nivel:4,hours:2,reqReg:[11],reqApr:[]},
+  {id:25,name:'Ingeniería y Calidad de Software',nivel:4,hours:3,reqReg:[19,20,23],reqApr:[13,14]},
+  {id:26,name:'Redes de Datos',nivel:4,hours:4,reqReg:[15,21],reqApr:[]},
+  {id:27,name:'Investigación Operativa',nivel:4,hours:4,reqReg:[17,22],reqApr:[]},
+  {id:28,name:'Simulación',nivel:4,hours:3,reqReg:[17],reqApr:[9]},
+  {id:29,name:'Tecnologías Para la Automatización',nivel:4,hours:3,reqReg:[10,22],reqApr:[9]},
+  {id:30,name:'Administración de Sistemas de Información',nivel:4,hours:6,reqReg:[18,23],reqApr:[16]},
+  {id:31,name:'Inteligencia Artificial',nivel:5,hours:3,reqReg:[28],reqApr:[17,22]},
+  {id:32,name:'Ciencia de Datos',nivel:5,hours:3,reqReg:[28],reqApr:[17,19]},
+  {id:33,name:'Sistemas de Gestión',nivel:5,hours:4,reqReg:[18,27],reqApr:[23]},
+  {id:34,name:'Gestión Gerencial',nivel:5,hours:3,reqReg:[24,30],reqApr:[18]},
+  {id:35,name:'Seguridad en los Sistemas de Información',nivel:5,hours:3,reqReg:[26,30],reqApr:[20,21]},
+  {id:36,name:'Proyecto Final',nivel:5,hours:6,reqReg:[25,26,30],reqApr:[12,20,23]},
+];
+
+const ELECTIVAS_DATA = [
+  {id:'e1', name:'Backend de Aplicaciones',nivel:3,modality:'2C',credits:4,reqReg:[14,13],reqApr:[6]},
+  {id:'e2', name:'Green Software',nivel:4,modality:'1C-2C',credits:3,reqReg:[20,19],reqApr:[14,13]},
+  {id:'e3', name:'Gestión Industrial de la Producción',nivel:4,modality:'1C',credits:3,reqReg:[19],reqApr:[8,16]},
+  {id:'e4', name:'Gestión de la Mejora de los Procesos',nivel:4,modality:'1C',credits:3,reqReg:[19],reqApr:[8,16]},
+  {id:'e5', name:'Desarrollo y Operaciones DevOPS',nivel:4,modality:'1C',credits:3,reqReg:[19,20],reqApr:[14,13]},
+  {id:'e6', name:'Desarrollo de Aplicaciones Con Objetos',nivel:4,modality:'2C',credits:3,reqReg:[13],reqApr:[6]},
+  {id:'e7', name:'Comunicación Multimedial en el Des. de SI',nivel:4,modality:'2C',credits:3,reqReg:[19],reqApr:[8,16]},
+  {id:'e8', name:'Arquitectura de Software',nivel:4,modality:'1C',credits:3,reqReg:[19,20],reqApr:[14,13]},
+  {id:'e9', name:'Desarrollo de Tecnología Blockchain',nivel:5,modality:'1C',credits:3,reqReg:[26,19],reqApr:[14,20]},
+  {id:'e10',name:'Creatividad e Innovación en Ingeniería',nivel:5,modality:'1C-2C',credits:3,reqReg:[30],reqApr:[20]},
+  {id:'e11',name:'Auditorías de SI/TI',nivel:5,modality:'1C',credits:3,reqReg:[30],reqApr:[20]},
+  {id:'e12',name:'Gerenciamiento Estratégico',nivel:5,modality:'1C',credits:3,reqReg:[30],reqApr:[20]},
+  {id:'e13',name:'Consultoría en Negocios Digitales',nivel:5,modality:'1C',credits:3,reqReg:[30],reqApr:[20]},
+  {id:'e14',name:'Emprendimientos Tecnológicos',nivel:5,modality:'1C',credits:3,reqReg:[30],reqApr:[16,19]},
+  {id:'e15',name:'Decisiones en Escenarios Complejos',nivel:5,modality:'1C',credits:3,reqReg:[27],reqApr:[19]},
+  {id:'e16',name:'Testing de Software',nivel:5,modality:'2C',credits:3,reqReg:[25],reqApr:[19,20]},
+  {id:'e17',name:'Seguridad en el Desarrollo de Software',nivel:5,modality:'2C',credits:3,reqReg:[26,19],reqApr:[20,8]},
+  {id:'e18',name:'Integración de Aplicaciones en Entorno Web',nivel:5,modality:'2C',credits:3,reqReg:[26,19],reqApr:[19,20]},
+  {id:'e19',name:'Ingeniería de Software Fuentes Abiertas/Libres',nivel:5,modality:'2C',credits:3,reqReg:[19,20,26],reqApr:[13,14]},
+];
+
+const TEC_DATA = [
+  // Año 0
+  {id:'t0a',name:'Curso de Preingreso',anio:0,reqReg:[],reqApr:[]},
+  {id:'t0b',name:'Curso de Admisión',anio:0,reqReg:[],reqApr:[]},
+  // Año 1
+  {id:'t1a',name:'Programación I',anio:1,reqReg:[],reqApr:[]},
+  {id:'t1b',name:'Arquitectura y Sistemas Operativos',anio:1,reqReg:[],reqApr:[]},
+  {id:'t1c',name:'Matemática',anio:1,reqReg:[],reqApr:[]},
+  {id:'t1d',name:'Organización Empresarial',anio:1,reqReg:[],reqApr:[]},
+  {id:'t1e',name:'Programación II',anio:1,reqReg:['t1b','t1a'],reqApr:[]},
+  {id:'t1f',name:'Probabilidad y Estadística',anio:1,reqReg:['t1c'],reqApr:[]},
+  {id:'t1g',name:'Base de Datos I',anio:1,reqReg:['t1c','t1a'],reqApr:[]},
+  {id:'t1h',name:'Inglés I',anio:1,reqReg:[],reqApr:[]},
+  // Año 2
+  {id:'t2a',name:'Programación III',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2b',name:'Base de Datos II',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2c',name:'Metodología de Sistemas I',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2d',name:'Inglés II',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2e',name:'Programación IV',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2f',name:'Metodología de Sistemas II',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2g',name:'Introducción al Análisis de Datos',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2h',name:'Legislación',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2i',name:'Gestión de Desarrollo de Software',anio:2,reqReg:[],reqApr:[]},
+  {id:'t2j',name:'Trabajo Final Integrador',anio:2,reqReg:[],reqApr:[]},
+];
+
+createApp({
+  setup() {
+    const savedISI  = JSON.parse(localStorage.getItem('isi-states')    || '{}');
+    const savedElec = JSON.parse(localStorage.getItem('isi-electivas') || '{}');
+    const savedSem  = localStorage.getItem('isi-seminario') === 'approved';
+    const savedTEC  = JSON.parse(localStorage.getItem('tec-states')    || '{}');
+
+    const isiStates      = reactive({});
+    const electivaStates = reactive({});
+    const tecStates      = reactive({});
+    const seminarioApproved = reactive({ value: savedSem });
+
+    ISI_DATA.forEach(m => { isiStates[m.id] = savedISI[m.id] || 'pending'; });
+    ELECTIVAS_DATA.forEach(e => { electivaStates[e.id] = savedElec[e.id] || false; });
+    TEC_DATA.forEach(m => { tecStates[m.id] = savedTEC[m.id] || 'pending'; });
+
+    watch(()=>({...isiStates}),     v=>localStorage.setItem('isi-states',    JSON.stringify(v)), {deep:true});
+    watch(()=>({...electivaStates}),v=>localStorage.setItem('isi-electivas', JSON.stringify(v)), {deep:true});
+    watch(()=>({...tecStates}),     v=>localStorage.setItem('tec-states',    JSON.stringify(v)), {deep:true});
+    watch(()=>seminarioApproved.value, v=>localStorage.setItem('isi-seminario', v?'approved':'pending'));
+
+    // ISI helpers
+    const isiRegOk  = id => isiStates[id]==='regular'||isiStates[id]==='approved';
+    const isiAprOk  = id => isiStates[id]==='approved';
+    const isiEnabled= m  => m.reqReg.every(isiRegOk) && m.reqApr.every(isiAprOk);
+
+    function isiCardClasses(m) {
+      const st=isiStates[m.id], en=isiEnabled(m);
+      return { 'pink-card':true, pending:st==='pending', regular:st==='regular', approved:st==='approved',
+               'locked-card':st==='pending'&&!en, 'enabled-pink':st==='pending'&&en };
+    }
+    function cycleISI(id) {
+      const m=ISI_DATA.find(x=>x.id===id); if(!m) return;
+      const c=isiStates[id];
+      if(c==='pending'){ if(isiEnabled(m)) isiStates[id]='regular'; }
+      else if(c==='regular') isiStates[id]='approved';
+      else isiStates[id]='pending';
+    }
+    function isiStateBadge(m) {
+      const st=isiStates[m.id];
+      if(st==='approved') return {label:'✓ Aprobada',cls:'pink-badge-approved'};
+      if(st==='regular')  return {label:'○ Regular',cls:'pink-badge-regular'};
+      if(isiEnabled(m))   return {label:'→ Habilitada',cls:'pink-badge-enabled'};
+      return null;
+    }
+    function isiTooltip(m) {
+      const st=isiStates[m.id];
+      if(st==='regular')  return 'Click → Aprobar · Click → Pendiente';
+      if(st==='approved') return 'Click → Volver a Pendiente';
+      if(isiEnabled(m))   return 'Habilitada · Click → Marcar Regular';
+      const rn=m.reqReg.filter(id=>!isiRegOk(id)).map(id=>ISI_DATA.find(x=>x.id===id)?.name||id);
+      const an=m.reqApr.filter(id=>!isiAprOk(id)).map(id=>ISI_DATA.find(x=>x.id===id)?.name||id);
+      const p=[];
+      if(rn.length) p.push('Regular: '+rn.join(', '));
+      if(an.length) p.push('Aprobada: '+an.join(', '));
+      return p.length ? 'Falta: '+p.join(' · ') : 'Sin requisitos';
+    }
+
+    const nivelesISI = computed(()=>{
+      const map={};
+      ISI_DATA.forEach(m=>{ if(!map[m.nivel]) map[m.nivel]={num:m.nivel,materias:[],totalHours:0}; map[m.nivel].materias.push(m); map[m.nivel].totalHours+=m.hours; });
+      return [1,2,3,4,5].map(n=>map[n]).filter(Boolean);
+    });
+    const approvedISI = computed(()=>Object.values(isiStates).filter(v=>v==='approved').length);
+    const totalISI = ISI_DATA.length;
+
+    // Seminario
+    const seminarioState = computed(()=>{
+      if(seminarioApproved.value) return 'approved';
+      return (isiRegOk(16)&&[6,8,13,14].every(isiAprOk)) ? 'enabled' : 'locked';
+    });
+    function toggleSeminario() { if(seminarioState.value==='locked') return; seminarioApproved.value=!seminarioApproved.value; }
+
+    // Electivas
+    const electivasISI = ELECTIVAS_DATA;
+    const isElectivaEnabled = e => e.reqReg.every(isiRegOk) && e.reqApr.every(isiAprOk);
+    function electivaClasses(e) {
+      if(electivaStates[e.id]) return 'electiva-card approved-e tooltip-wrap';
+      if(!isElectivaEnabled(e)) return 'electiva-card locked-e tooltip-wrap';
+      return 'electiva-card enabled-e tooltip-wrap';
+    }
+    function toggleElectiva(id) {
+      const e=ELECTIVAS_DATA.find(x=>x.id===id); if(!e||(!electivaStates[id]&&!isElectivaEnabled(e))) return;
+      electivaStates[id]=!electivaStates[id];
+    }
+    function electivaTooltip(e) {
+      if(electivaStates[e.id]) return 'Aprobada · Click para desmarcar';
+      if(!isElectivaEnabled(e)) {
+        const rn=e.reqReg.filter(id=>!isiRegOk(id)).map(id=>ISI_DATA.find(x=>x.id===id)?.name||id);
+        const an=e.reqApr.filter(id=>!isiAprOk(id)).map(id=>ISI_DATA.find(x=>x.id===id)?.name||id);
+        const p=[]; if(rn.length)p.push('Reg: '+rn.join(', ')); if(an.length)p.push('Apr: '+an.join(', '));
+        return 'Falta: '+(p.join(' · ')||'requisitos');
+      }
+      return 'Habilitada · Click para aprobar';
+    }
+    const creditsNiv3  = computed(()=>ELECTIVAS_DATA.filter(e=>e.nivel===3&&electivaStates[e.id]).reduce((s,e)=>s+e.credits,0));
+    const totalCredits = computed(()=>ELECTIVAS_DATA.filter(e=>electivaStates[e.id]).reduce((s,e)=>s+e.credits,0));
+
+    const analystIds = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
+    const analystUnlocked  = computed(()=>analystIds.every(id=>isiStates[id]==='approved')&&seminarioApproved.value&&creditsNiv3.value>=4);
+    const engineerUnlocked = computed(()=>ISI_DATA.every(m=>isiStates[m.id]==='approved')&&totalCredits.value>=20);
+
+    // TEC helpers
+    const tecRegOk  = id => tecStates[id]==='regular'||tecStates[id]==='approved';
+    const tecAprOk  = id => tecStates[id]==='approved';
+    const tecEnabled= m  => m.reqReg.every(tecRegOk) && m.reqApr.every(tecAprOk);
+
+    function tecCardClasses(m) {
+      const st=tecStates[m.id], en=tecEnabled(m);
+      return { 'teal-card':true, pending:st==='pending', regular:st==='regular', approved:st==='approved',
+               'locked-card':st==='pending'&&!en, 'enabled-teal':st==='pending'&&en };
+    }
+    function cycleTEC(id) {
+      const m=TEC_DATA.find(x=>x.id===id); if(!m) return;
+      const c=tecStates[id];
+      if(c==='pending'){ if(tecEnabled(m)) tecStates[id]='regular'; }
+      else if(c==='regular') tecStates[id]='approved';
+      else tecStates[id]='pending';
+    }
+    function tecStateBadge(m) {
+      const st=tecStates[m.id];
+      if(st==='approved') return {label:'✓ Aprobada',cls:'teal-badge-approved'};
+      if(st==='regular')  return {label:'○ Regular',cls:'teal-badge-regular'};
+      if(tecEnabled(m))   return {label:'→ Habilitada',cls:'teal-badge-enabled'};
+      return null;
+    }
+    function tecTooltip(m) {
+      const st=tecStates[m.id];
+      if(st==='regular')  return 'Click → Aprobar · Click → Pendiente';
+      if(st==='approved') return 'Click → Volver a Pendiente';
+      if(tecEnabled(m))   return 'Habilitada · Click → Marcar Regular';
+      const rn=m.reqReg.filter(id=>!tecRegOk(id)).map(id=>TEC_DATA.find(x=>x.id===id)?.name||id);
+      const an=m.reqApr.filter(id=>!tecAprOk(id)).map(id=>TEC_DATA.find(x=>x.id===id)?.name||id);
+      const p=[]; if(rn.length)p.push('Regular: '+rn.join(', ')); if(an.length)p.push('Aprobada: '+an.join(', '));
+      return p.length ? 'Falta: '+p.join(' · ') : 'Sin requisitos';
+    }
+
+    const nivelesTEC = computed(()=>{
+      const map={};
+      TEC_DATA.forEach(m=>{ if(!map[m.anio]) map[m.anio]={num:m.anio,materias:[]}; map[m.anio].materias.push(m); });
+      return [0,1,2].map(n=>map[n]).filter(Boolean);
+    });
+    const approvedTEC = computed(()=>Object.values(tecStates).filter(v=>v==='approved').length);
+    const totalTEC = TEC_DATA.length;
+    const tecUnlocked = computed(()=>TEC_DATA.every(m=>tecStates[m.id]==='approved'));
+
+    function resetAll() {
+      if(!confirm('¿Reiniciar TODO el progreso de ambas carreras?')) return;
+      ISI_DATA.forEach(m=>{ isiStates[m.id]='pending'; });
+      ELECTIVAS_DATA.forEach(e=>{ electivaStates[e.id]=false; });
+      TEC_DATA.forEach(m=>{ tecStates[m.id]='pending'; });
+      seminarioApproved.value=false;
+    }
+
+    return {
+      nivelesISI, isiStates, approvedISI, totalISI,
+      isiCardClasses, cycleISI, isiStateBadge, isiTooltip,
+      seminarioApproved, seminarioState, toggleSeminario,
+      electivasISI, electivaStates, electivaClasses, toggleElectiva, electivaTooltip,
+      creditsNiv3, totalCredits,
+      analystUnlocked, engineerUnlocked,
+      nivelesTEC, tecStates, approvedTEC, totalTEC,
+      tecCardClasses, cycleTEC, tecStateBadge, tecTooltip, tecUnlocked,
+      resetAll,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
